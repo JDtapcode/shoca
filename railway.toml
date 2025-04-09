@@ -1,0 +1,5 @@
+[build]
+command = "dotnet publish ./SHOCA.API/SHOCA.API.csproj -c Release -o out"
+
+[start]
+command = "dotnet out/SHOCA.API.dll"
