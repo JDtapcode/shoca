@@ -71,7 +71,7 @@ namespace Services.Services
                 // Add role
                 await _userManager.AddToRoleAsync(user, Repositories.Enums.Role.Customer.ToString());
 
-                // Email verification (disable this function if users are not required to verify their email)
+                // Email verification (disable this function if users are not to verify their email)
                 await SendVerificationEmail(user);
 
                 return new ResponseModel
@@ -458,7 +458,7 @@ namespace Services.Services
         //            var role = accountRegisterModels.Role?.ToString() ?? Repositories.Enums.Role.Customer.ToString();
         //            await _userManager.AddToRoleAsync(user, role);
 
-        //            // Email verification (disable this function if users are not required to verify their email)
+        //            // Email verification (disable this function if users are not to verify their email)
         //            // await SendVerificationEmail(user);
 
         //            count++;
