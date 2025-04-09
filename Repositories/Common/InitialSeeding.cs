@@ -11,8 +11,11 @@ namespace Repositories.Common
 {
     public class InitialSeeding
     {
-        private static readonly string[] RoleList =
-            [Enums.Role.Admin.ToString(), Enums.Role.Customer.ToString(), Enums.Role.Staff.ToString()];
+        private static readonly string[] RoleList = {
+                                                Enums.Role.Admin.ToString(),
+                                                Enums.Role.Customer.ToString(),
+                                                Enums.Role.Staff.ToString()
+                                            };
 
         public static async Task Initialize(IServiceProvider serviceProvider)
         {
