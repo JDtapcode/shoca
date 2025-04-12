@@ -10,10 +10,12 @@ namespace Repositories.Models.RatingModels
     public class RatingCommentModel : BaseEntity
     {
         public int RatingValue { get; set; }
-        public Guid AccountId { get; set; }
+        public Guid CustomerId { get; set; }
+        public string? AvatarUrl { get; set; }
         public string? CommentText { get; set; }
         public DateTime? CommentedOn { get; set; }
-        public string? AccountName { get; set; }
+        //public string? AccountName { get; set; }
+        public string? CustomerName { get; set; }
         public Guid? ParentCommentId { get; set; }
         public List<RatingCommentModel> ChildComments { get; set; } = new List<RatingCommentModel>();
     }

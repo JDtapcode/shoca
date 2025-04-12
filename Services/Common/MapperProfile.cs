@@ -99,16 +99,34 @@ namespace Services.Common
             //Rating
             CreateMap<Rating, RatingModel>()
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FirstName + " " + src.Customer.LastName : string.Empty))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.AvatarUrl : null))
                 .ForMember(dest => dest.ArtworkTitle, opt => opt.MapFrom(src => src.Artwork != null ? src.Artwork.Title : string.Empty))
                 .ForMember(dest => dest.CommentsList, opt => opt.MapFrom(src => src.CommentsList ?? new List<RatingComment>()));
-            CreateMap<RatingCommentCreateModel, RatingComment>().ReverseMap();
+
             CreateMap<RatingComment, RatingCommentModel>()
-                .ForMember(dest => dest.AccountName, opt => opt.MapFrom(src => src.Account != null ? src.Account.FirstName + " " + src.Account.LastName : string.Empty))
+                .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.AccountId))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Account != null ? src.Account.FirstName + " " + src.Account.LastName : string.Empty))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.Account != null ? src.Account.AvatarUrl : null))
                 .ForMember(dest => dest.ChildComments, opt => opt.MapFrom(src => src.ChildComments))
                 .ReverseMap();
-            CreateMap<ArtworkImage, ArtworkImageModel>();
 
-           //Propackage
+            CreateMap<RatingCommentCreateModel, RatingComment>()
+                .ForMember(dest => dest.AccountId, opt => opt.MapFrom(src => src.AccountId))
+                .ReverseMap();
+
+            CreateMap<ArtworkImage, ArtworkImageModel>();
+            //CreateMap<Rating, RatingModel>()
+            //    .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FirstName + " " + src.Customer.LastName : string.Empty))
+            //    .ForMember(dest => dest.ArtworkTitle, opt => opt.MapFrom(src => src.Artwork != null ? src.Artwork.Title : string.Empty))
+            //    .ForMember(dest => dest.CommentsList, opt => opt.MapFrom(src => src.CommentsList ?? new List<RatingComment>()));
+            //CreateMap<RatingCommentCreateModel, RatingComment>().ReverseMap();
+            //CreateMap<RatingComment, RatingCommentModel>()
+            //    .ForMember(dest => dest.AccountName, opt => opt.MapFrom(src => src.Account != null ? src.Account.FirstName + " " + src.Account.LastName : string.Empty))
+            //    .ForMember(dest => dest.ChildComments, opt => opt.MapFrom(src => src.ChildComments))
+            //    .ReverseMap();
+            //CreateMap<ArtworkImage, ArtworkImageModel>();
+
+            //Propackage
             CreateMap<ProPackage, ProPackageModel>()
       .ForMember(dest => dest.Features, opt => opt.MapFrom(src =>
           src.Features != null ? src.Features.Select(f => f.Name).ToList() : new List<string>()
