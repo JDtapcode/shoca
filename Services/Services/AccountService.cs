@@ -624,9 +624,51 @@ namespace Services.Services
         //    };
         //}
 
+        //public async Task<Pagination<AccountModel>> GetAllAccounts(AccountFilterModel accountFilterModel)
+        //{
+        //    var accountList = await _unitOfWork.AccountRepository.GetAllAsync(pageIndex: accountFilterModel.PageIndex,
+        //        pageSize: accountFilterModel.PageSize,
+        //        filter: (x =>
+        //            x.IsDeleted == accountFilterModel.IsDeleted &&
+        //            (accountFilterModel.Gender == null || x.Gender == accountFilterModel.Gender) &&
+        //            (accountFilterModel.Role == null || x.Role == accountFilterModel.Role.ToString()) &&
+        //            (string.IsNullOrEmpty(accountFilterModel.Search) ||
+        //             x.FirstName!.ToLower().Contains(accountFilterModel.Search.ToLower()) ||
+        //             x.LastName!.ToLower().Contains(accountFilterModel.Search.ToLower()) ||
+        //             x.Email!.ToLower().Contains(accountFilterModel.Search.ToLower()))),
+        //        orderBy: (x =>
+        //        {
+        //            switch (accountFilterModel.Order.ToLower())
+        //            {
+        //                case "first-name":
+        //                    return accountFilterModel.OrderByDescending
+        //                        ? x.OrderByDescending(x => x.FirstName)
+        //                        : x.OrderBy(x => x.FirstName);
+        //                case "last-name":
+        //                    return accountFilterModel.OrderByDescending
+        //                        ? x.OrderByDescending(x => x.LastName)
+        //                        : x.OrderBy(x => x.LastName);
+        //                case "date-of-birth":
+        //                    return accountFilterModel.OrderByDescending
+        //                        ? x.OrderByDescending(x => x.DateOfBirth)
+        //                        : x.OrderBy(x => x.DateOfBirth);
+        //                default:
+        //                    return accountFilterModel.OrderByDescending
+        //                        ? x.OrderByDescending(x => x.CreationDate)
+        //                        : x.OrderBy(x => x.CreationDate);
+        //            }
+        //        })
+        //    );
+
+        //    var accountModelList = _mapper.Map<List<AccountModel>>(accountList.Data);
+        //    return new Pagination<AccountModel>(accountModelList, accountList.TotalCount,
+        //        accountFilterModel.PageIndex,
+        //        accountFilterModel.PageSize);
+        //}
         public async Task<Pagination<AccountModel>> GetAllAccounts(AccountFilterModel accountFilterModel)
         {
-            var accountList = await _unitOfWork.AccountRepository.GetAllAsync(pageIndex: accountFilterModel.PageIndex,
+            var accountList = await _unitOfWork.AccountRepository.GetAllAsync(
+                pageIndex: accountFilterModel.PageIndex,
                 pageSize: accountFilterModel.PageSize,
                 filter: (x =>
                     x.IsDeleted == accountFilterModel.IsDeleted &&
@@ -661,11 +703,27 @@ namespace Services.Services
             );
 
             var accountModelList = _mapper.Map<List<AccountModel>>(accountList.Data);
+
+            // Truy vấn PurchasedPackages cho tất cả tài khoản
+            foreach (var accountModel in accountModelList)
+            {
+                var accountProPackages = await _unitOfWork.AccountProPackageRepository
+    .GetAllAsync(app => app.AccountId == accountModel.Id && !app.IsDeleted);
+
+                accountModel.PurchasedPackages = accountProPackages.Data.Select(app => new AccountProPackageInfo
+                {
+                    Id = app.Id,
+                    ProPackageId = app.ProPackageId,
+                    StartDate = app.StartDate,
+                    EndDate = app.EndDate,
+                    PackageStatus = app.PackageStatus.ToString()
+                }).ToList();
+            }
+
             return new Pagination<AccountModel>(accountModelList, accountList.TotalCount,
                 accountFilterModel.PageIndex,
                 accountFilterModel.PageSize);
         }
-
         //public async Task<ResponseModel> UpdateAccount(Guid id, AccountUpdateModel accountUpdateModel)
         //{
         //    var user = await _userManager.FindByIdAsync(id.ToString());

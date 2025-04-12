@@ -12,6 +12,12 @@ namespace Repositories.Interfaces
     public interface IGenericRepository<TEntity> where TEntity : BaseEntity
     {
         Task<TEntity?> GetAsync(Guid id, string include = "");
+        Task<long> CountAsync(Expression<Func<TEntity, bool>> filter);
+        Task<decimal> SumAsync(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, decimal>> selector);
+        Task<IEnumerable<TResult>> GroupByAsync<TGroup, TResult>(
+            Expression<Func<TEntity, bool>> filter,
+            Expression<Func<TEntity, TGroup>> groupBy,
+            Expression<Func<IGrouping<TGroup, TEntity>, TResult>> select);
         Task<TEntity?> GetAsync(Guid id, params string[] includes);
         //Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, params string[] includeProperties);
         //    Task<(List<TEntity> Data, int TotalCount)> GetAllAsync(Expression<Func<TEntity, bool>>? filter = null,

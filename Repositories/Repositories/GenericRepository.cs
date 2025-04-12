@@ -24,6 +24,25 @@ namespace Repositories.Repositories
             _dbSet = dbContext.Set<TEntity>();
             _claimsService = claimsService;
         }
+        public async Task<long> CountAsync(Expression<Func<TEntity, bool>> filter)
+        {
+            return await _dbSet.LongCountAsync(filter);
+        }
+
+        
+
+        public async Task<IEnumerable<TResult>> GroupByAsync<TGroup, TResult>(
+            Expression<Func<TEntity, bool>> filter,
+            Expression<Func<TEntity, TGroup>> groupBy,
+            Expression<Func<IGrouping<TGroup, TEntity>, TResult>> select)
+        {
+            return await _dbSet
+                .Where(filter)
+                .GroupBy(groupBy)
+                .Select(select)
+                .ToListAsync();
+        }
+
         public async Task<(List<TEntity> Data, int TotalCount)> GetAllAsyncs(
     Expression<Func<TEntity, bool>>? filter = null,
     int pageIndex = 1,
@@ -266,6 +285,10 @@ namespace Repositories.Repositories
             return (data, totalCount);
         }
 
+        public async Task<decimal> SumAsync(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, decimal>> selector)
+        {
+            return await _dbSet.Where(filter).SumAsync(selector);
+        }
     }
 }
 
