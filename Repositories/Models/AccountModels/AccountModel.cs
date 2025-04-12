@@ -23,6 +23,6 @@ namespace Repositories.Models.AccountModels
         public string? PersonalWebsiteUrl { get; set; }
         public string? PortfolioUrl { get; set; }
         public string? Role { get; set; }
-        public List<AccountProPackageInfo> PurchasedPackages { get; set; } = new List<AccountProPackageInfo>();
+        public List<AccountProPackageInfos> PurchasedPackages { get; set; } = new List<AccountProPackageInfos>();
     }
 }

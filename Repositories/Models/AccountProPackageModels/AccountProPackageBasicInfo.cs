@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Repositories.Models.AccountProPackageModels
 {
-    public class AccountProPackageInfo
+    public class AccountProPackageBasicInfo
     {
         public Guid Id { get; set; }
         public Guid ProPackageId { get; set; }

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Repositories.Entities;
 using Repositories.Interfaces;
 using Repositories.Models.AccountModels;
 using Repositories.Models.AccountProPackageModels;
+using Repositories.Models.ProPackageModels;
 using Repositories.Utils;
 using Services.Common;
 using Services.Interfaces;
@@ -561,48 +563,9 @@ namespace Services.Services
                 Message = "Mật khẩu phải chứa chữ hoa, số và ký tự đặc biệt."
             };
         }
-        public async Task<ResponseDataModel<AccountModel>> GetAccount(Guid id)
-        {
-            var user = await _userManager.FindByIdAsync(id.ToString());
-            if (user == null)
-            {
-                return new ResponseDataModel<AccountModel>()
-                {
-                    Status = false,
-                    Message = "User not found"
-                };
-            }
-
-            var accountProPackages = await _unitOfWork.AccountProPackageRepository
-                .GetAllAsync(app => app.AccountId == id && !app.IsDeleted);
-
-            var userModel = _mapper.Map<AccountModel>(user);
-
-            userModel.PurchasedPackages = accountProPackages.Data.Select(app => new AccountProPackageInfo
-            {
-                Id = app.Id,
-                ProPackageId = app.ProPackageId,
-                StartDate = app.StartDate,
-                EndDate = app.EndDate,
-                PackageStatus = app.PackageStatus.ToString()
-            }).ToList();
-
-            var role = await _userManager.GetRolesAsync(user);
-            userModel.Role = Enum.Parse(typeof(Repositories.Enums.Role), role[0]).ToString();
-
-            return new ResponseDataModel<AccountModel>()
-            {
-                Status = true,
-                Message = "Get account successfully",
-                Data = userModel
-            };
-        }
-
-
         //public async Task<ResponseDataModel<AccountModel>> GetAccount(Guid id)
         //{
         //    var user = await _userManager.FindByIdAsync(id.ToString());
-
         //    if (user == null)
         //    {
         //        return new ResponseDataModel<AccountModel>()
@@ -612,9 +575,22 @@ namespace Services.Services
         //        };
         //    }
 
+        //    var accountProPackages = await _unitOfWork.AccountProPackageRepository
+        //        .GetAllAsync(app => app.AccountId == id && !app.IsDeleted);
+
         //    var userModel = _mapper.Map<AccountModel>(user);
+
+        //    userModel.PurchasedPackages = accountProPackages.Data.Select(app => new AccountProPackageInfo
+        //    {
+        //        Id = app.Id,
+        //        ProPackageId = app.ProPackageId,
+        //        StartDate = app.StartDate,
+        //        EndDate = app.EndDate,
+        //        PackageStatus = app.PackageStatus.ToString()
+        //    }).ToList();
+
         //    var role = await _userManager.GetRolesAsync(user);
-        //    userModel.Role = Enum.Parse(typeof(Repositories.Enums.Role), role[0]).ToString()!;
+        //    userModel.Role = Enum.Parse(typeof(Repositories.Enums.Role), role[0]).ToString();
 
         //    return new ResponseDataModel<AccountModel>()
         //    {
@@ -624,47 +600,113 @@ namespace Services.Services
         //    };
         //}
 
-        //public async Task<Pagination<AccountModel>> GetAllAccounts(AccountFilterModel accountFilterModel)
-        //{
-        //    var accountList = await _unitOfWork.AccountRepository.GetAllAsync(pageIndex: accountFilterModel.PageIndex,
-        //        pageSize: accountFilterModel.PageSize,
-        //        filter: (x =>
-        //            x.IsDeleted == accountFilterModel.IsDeleted &&
-        //            (accountFilterModel.Gender == null || x.Gender == accountFilterModel.Gender) &&
-        //            (accountFilterModel.Role == null || x.Role == accountFilterModel.Role.ToString()) &&
-        //            (string.IsNullOrEmpty(accountFilterModel.Search) ||
-        //             x.FirstName!.ToLower().Contains(accountFilterModel.Search.ToLower()) ||
-        //             x.LastName!.ToLower().Contains(accountFilterModel.Search.ToLower()) ||
-        //             x.Email!.ToLower().Contains(accountFilterModel.Search.ToLower()))),
-        //        orderBy: (x =>
-        //        {
-        //            switch (accountFilterModel.Order.ToLower())
-        //            {
-        //                case "first-name":
-        //                    return accountFilterModel.OrderByDescending
-        //                        ? x.OrderByDescending(x => x.FirstName)
-        //                        : x.OrderBy(x => x.FirstName);
-        //                case "last-name":
-        //                    return accountFilterModel.OrderByDescending
-        //                        ? x.OrderByDescending(x => x.LastName)
-        //                        : x.OrderBy(x => x.LastName);
-        //                case "date-of-birth":
-        //                    return accountFilterModel.OrderByDescending
-        //                        ? x.OrderByDescending(x => x.DateOfBirth)
-        //                        : x.OrderBy(x => x.DateOfBirth);
-        //                default:
-        //                    return accountFilterModel.OrderByDescending
-        //                        ? x.OrderByDescending(x => x.CreationDate)
-        //                        : x.OrderBy(x => x.CreationDate);
-        //            }
-        //        })
-        //    );
 
-        //    var accountModelList = _mapper.Map<List<AccountModel>>(accountList.Data);
-        //    return new Pagination<AccountModel>(accountModelList, accountList.TotalCount,
-        //        accountFilterModel.PageIndex,
-        //        accountFilterModel.PageSize);
-        //}
+        public async Task<ResponseDataModel<AccountModel>> GetAccount(Guid id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user == null)
+            {
+                return new ResponseDataModel<AccountModel>()
+                {
+                    Status = false,
+                    Message = "Không tìm thấy người dùng"
+                };
+            }
+
+            var accountProPackages = await _unitOfWork.AccountProPackageRepository
+                .GetAllAsync(
+                    app => app.AccountId == id && !app.IsDeleted,
+                    include: q => q.Include(app => app.ProPackage).ThenInclude(pp => pp.Features));
+
+            var userModel = _mapper.Map<AccountModel>(user);
+
+            userModel.PurchasedPackages = accountProPackages.Data.Select(app => new AccountProPackageInfos
+            {
+                Id = app.Id,
+                ProPackageId = app.ProPackageId,
+                StartDate = app.StartDate,
+                EndDate = app.EndDate,
+                PackageStatus = app.PackageStatus.ToString(),
+                ProPackage = app.ProPackage != null ? new ProPackageDTO
+                {
+                    Id = app.ProPackage.Id,
+                    Name = app.ProPackage.Name,
+                    Price = app.ProPackage.Price,
+                    Duration = app.ProPackage.Duration,
+                    FeatureNames = app.ProPackage.Features?.Select(f => f.Name).ToList() ?? new List<string>()
+                } : null
+            }).ToList();
+
+            var role = await _userManager.GetRolesAsync(user);
+            userModel.Role = Enum.Parse(typeof(Repositories.Enums.Role), role[0]).ToString();
+
+            return new ResponseDataModel<AccountModel>()
+            {
+                Status = true,
+                Message = "Lấy thông tin tài khoản thành công",
+                Data = userModel
+            };
+        }
+
+        //    public async Task<Pagination<AccountModel>> GetAllAccounts(AccountFilterModel accountFilterModel)
+        //    {
+        //        var accountList = await _unitOfWork.AccountRepository.GetAllAsync(
+        //            pageIndex: accountFilterModel.PageIndex,
+        //            pageSize: accountFilterModel.PageSize,
+        //            filter: (x =>
+        //                x.IsDeleted == accountFilterModel.IsDeleted &&
+        //                (accountFilterModel.Gender == null || x.Gender == accountFilterModel.Gender) &&
+        //                (accountFilterModel.Role == null || x.Role == accountFilterModel.Role.ToString()) &&
+        //                (string.IsNullOrEmpty(accountFilterModel.Search) ||
+        //                 x.FirstName!.ToLower().Contains(accountFilterModel.Search.ToLower()) ||
+        //                 x.LastName!.ToLower().Contains(accountFilterModel.Search.ToLower()) ||
+        //                 x.Email!.ToLower().Contains(accountFilterModel.Search.ToLower()))),
+        //            orderBy: (x =>
+        //            {
+        //                switch (accountFilterModel.Order.ToLower())
+        //                {
+        //                    case "first-name":
+        //                        return accountFilterModel.OrderByDescending
+        //                            ? x.OrderByDescending(x => x.FirstName)
+        //                            : x.OrderBy(x => x.FirstName);
+        //                    case "last-name":
+        //                        return accountFilterModel.OrderByDescending
+        //                            ? x.OrderByDescending(x => x.LastName)
+        //                            : x.OrderBy(x => x.LastName);
+        //                    case "date-of-birth":
+        //                        return accountFilterModel.OrderByDescending
+        //                            ? x.OrderByDescending(x => x.DateOfBirth)
+        //                            : x.OrderBy(x => x.DateOfBirth);
+        //                    default:
+        //                        return accountFilterModel.OrderByDescending
+        //                            ? x.OrderByDescending(x => x.CreationDate)
+        //                            : x.OrderBy(x => x.CreationDate);
+        //                }
+        //            })
+        //        );
+
+        //        var accountModelList = _mapper.Map<List<AccountModel>>(accountList.Data);
+
+        //        // Truy vấn PurchasedPackages cho tất cả tài khoản
+        //        foreach (var accountModel in accountModelList)
+        //        {
+        //            var accountProPackages = await _unitOfWork.AccountProPackageRepository
+        //.GetAllAsync(app => app.AccountId == accountModel.Id && !app.IsDeleted);
+
+        //            accountModel.PurchasedPackages = accountProPackages.Data.Select(app => new AccountProPackageInfo
+        //            {
+        //                Id = app.Id,
+        //                ProPackageId = app.ProPackageId,
+        //                StartDate = app.StartDate,
+        //                EndDate = app.EndDate,
+        //                PackageStatus = app.PackageStatus.ToString()
+        //            }).ToList();
+        //        }
+
+        //        return new Pagination<AccountModel>(accountModelList, accountList.TotalCount,
+        //            accountFilterModel.PageIndex,
+        //            accountFilterModel.PageSize);
+        //    }
         public async Task<Pagination<AccountModel>> GetAllAccounts(AccountFilterModel accountFilterModel)
         {
             var accountList = await _unitOfWork.AccountRepository.GetAllAsync(
@@ -704,85 +746,33 @@ namespace Services.Services
 
             var accountModelList = _mapper.Map<List<AccountModel>>(accountList.Data);
 
-            // Truy vấn PurchasedPackages cho tất cả tài khoản
+            // Lấy tất cả AccountProPackage cho các tài khoản trong danh sách
+            var accountIds = accountModelList.Select(a => a.Id).ToList();
+            var accountProPackages = await _unitOfWork.AccountProPackageRepository
+                .GetAllAsync(app => accountIds.Contains(app.AccountId) && !app.IsDeleted);
+
+            // Gán PurchasedPackages cho từng tài khoản
             foreach (var accountModel in accountModelList)
             {
-                var accountProPackages = await _unitOfWork.AccountProPackageRepository
-    .GetAllAsync(app => app.AccountId == accountModel.Id && !app.IsDeleted);
-
-                accountModel.PurchasedPackages = accountProPackages.Data.Select(app => new AccountProPackageInfo
-                {
-                    Id = app.Id,
-                    ProPackageId = app.ProPackageId,
-                    StartDate = app.StartDate,
-                    EndDate = app.EndDate,
-                    PackageStatus = app.PackageStatus.ToString()
-                }).ToList();
+                accountModel.PurchasedPackages = accountProPackages.Data
+                    .Where(app => app.AccountId == accountModel.Id)
+                    .Select(app => new AccountProPackageInfos
+                    {
+                        Id = app.Id,
+                        ProPackageId = app.ProPackageId,
+                        StartDate = app.StartDate,
+                        EndDate = app.EndDate,
+                        PackageStatus = app.PackageStatus.ToString(),
+                        ProPackage = null // Không trả về chi tiết ProPackage
+                    }).ToList();
             }
 
-            return new Pagination<AccountModel>(accountModelList, accountList.TotalCount,
+            return new Pagination<AccountModel>(
+                accountModelList,
+                accountList.TotalCount,
                 accountFilterModel.PageIndex,
                 accountFilterModel.PageSize);
         }
-        //public async Task<ResponseModel> UpdateAccount(Guid id, AccountUpdateModel accountUpdateModel)
-        //{
-        //    var user = await _userManager.FindByIdAsync(id.ToString());
-
-        //    if (user == null)
-        //    {
-        //        return new ResponseModel
-        //        {
-        //            Status = false,
-        //            Message = "User not found"
-        //        };
-        //    }
-
-        //    user.FirstName = accountUpdateModel.FirstName;
-        //    user.LastName = accountUpdateModel.LastName;
-        //    user.Gender = accountUpdateModel.Gender;
-        //    user.DateOfBirth = accountUpdateModel.DateOfBirth;
-        //    user.Address = accountUpdateModel.Address;
-        //    user.AvatarUrl = accountUpdateModel.AvatarUrl;
-        //    user.PersonalWebsiteUrl = accountUpdateModel.PersonalWebsiteUrl;
-        //    user.PortfolioUrl = accountUpdateModel.PortfolioUrl;
-        //    user.PhoneNumber = accountUpdateModel.PhoneNumber;
-        //    user.ModificationDate = DateTime.Now;
-        //    user.ModifiedBy = _claimsService.GetCurrentUserId;
-
-        //    // Update the user in _userManager
-        //    var updateResult = await _userManager.UpdateAsync(user);
-
-        //    if (!updateResult.Succeeded)
-        //    {
-        //        return new ResponseModel
-        //        {
-        //            Status = false,
-        //            Message = "Cannot update account"
-        //        };
-        //    }
-
-        //    // Manage user roles
-        //    var currentRoles = await _userManager.GetRolesAsync(user);
-        //    await _userManager.RemoveFromRolesAsync(user, currentRoles);
-
-        //    // Assign the new role
-        //    var addRoleResult = await _userManager.AddToRoleAsync(user, accountUpdateModel.Role.ToString());
-
-        //    if (addRoleResult.Succeeded)
-        //    {
-        //        return new ResponseModel
-        //        {
-        //            Status = true,
-        //            Message = "Update account and role successfully",
-        //        };
-        //    }
-
-        //    return new ResponseModel
-        //    {
-        //        Status = false,
-        //        Message = "Cannot update account role",
-        //    };
-        //}
         public async Task<ResponseDataModel<AccountUpdateModel>> UpdateAccount(Guid id, AccountUpdateModel accountUpdateModel)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());

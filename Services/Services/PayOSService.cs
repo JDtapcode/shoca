@@ -110,8 +110,8 @@ namespace Services.Services
     amount: (int)Math.Round(package.Price, 0),
     description: description,
     items: items,
-    cancelUrl: "http://localhost:5173/payment-fail",  
-    returnUrl: "http://localhost:5173/payment-success",  
+    cancelUrl: "https://shoca.vercel.app/payment-fail",  
+    returnUrl: "https://shoca.vercel.app/payment-success",  
     buyerName: user.FirstName + " " + (user.LastName ?? ""),
     buyerEmail: user.Email ?? "email@gmail.com",
     buyerPhone: user.PhoneNumber ?? "0123456789"
@@ -136,6 +136,53 @@ namespace Services.Services
             }
         }
 
+        //public async Task<PaymentResponseModel> HandlePaymentReturnAsync(string orderCode, string status)
+        //{
+        //    var transaction = await _unitOfWork.TransactionRepository.GetByOrderCodeAsync(orderCode);
+
+        //    if (transaction == null)
+        //        throw new Exception("Transaction not found");
+
+        //    if (transaction.PaymentStatus == PaymentStatus.Complete)
+        //        throw new Exception("Transaction already completed");
+
+        //    if (status == "PAID")
+        //    {
+        //        transaction.PaymentStatus = PaymentStatus.Complete;
+
+        //        var accountProPackage = new AccountProPackage
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            AccountId = transaction.UserId.Value,
+        //            ProPackageId = transaction.ProPackageId.Value,
+        //            StartDate = DateTime.UtcNow,
+        //            EndDate = DateTime.UtcNow.AddMonths(1),
+        //            PackageStatus = PackageStatus.OnGoing
+        //        };
+
+        //        await _unitOfWork.AccountProPackageRepository.AddAsync(accountProPackage);
+        //        await _unitOfWork.SaveChangeAsync();
+
+        //        return new PaymentResponseModel
+        //        {
+        //            OrderId = transaction.Id.ToString(),
+        //            PaymentStatus = "Success",
+        //            Amount = transaction.MoneyAmount
+        //        };
+        //    }
+        //    else
+        //    {
+        //        transaction.PaymentStatus = PaymentStatus.Canceled;
+        //        await _unitOfWork.SaveChangeAsync();
+
+        //        return new PaymentResponseModel
+        //        {
+        //            OrderId = transaction.Id.ToString(),
+        //            PaymentStatus = "Cancelled",
+        //            Amount = transaction.MoneyAmount
+        //        };
+        //    }
+        //}
         public async Task<PaymentResponseModel> HandlePaymentReturnAsync(string orderCode, string status)
         {
             var transaction = await _unitOfWork.TransactionRepository.GetByOrderCodeAsync(orderCode);
@@ -150,13 +197,29 @@ namespace Services.Services
             {
                 transaction.PaymentStatus = PaymentStatus.Complete;
 
+                // Fetch the ProPackage to get the duration
+                var proPackage = await _unitOfWork.ProPackageRepository.GetProPackageByIdWithDetailsAsync(transaction.ProPackageId.Value);
+                if (proPackage == null)
+                    throw new Exception("Pro package not found");
+
+                // Parse the duration (assuming Duration is stored as a string like "3 months", "6 months", etc.)
+                int months = 1; // Default to 1 month if parsing fails
+                if (!string.IsNullOrEmpty(proPackage.Duration))
+                {
+                    var durationParts = proPackage.Duration.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (durationParts.Length > 0 && int.TryParse(durationParts[0], out int parsedMonths))
+                    {
+                        months = parsedMonths;
+                    }
+                }
+
                 var accountProPackage = new AccountProPackage
                 {
                     Id = Guid.NewGuid(),
                     AccountId = transaction.UserId.Value,
                     ProPackageId = transaction.ProPackageId.Value,
                     StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.AddMonths(1),
+                    EndDate = DateTime.UtcNow.AddMonths(months), 
                     PackageStatus = PackageStatus.OnGoing
                 };
 
@@ -183,6 +246,7 @@ namespace Services.Services
                 };
             }
         }
+
 
         private long GenerateOrderCode()
         {

@@ -18,7 +18,12 @@ namespace Repositories.Repositories
         public ProPackageRepository(AppDbContext dbContext, IClaimsService claimsService) : base(dbContext, claimsService)
         {
         }
-
+        public async Task<ProPackage> GetByIdAsync(Guid id)
+        {
+            return await _dbSet
+                .Include(pp => pp.Features)
+                .FirstOrDefaultAsync(pp => pp.Id == id && !pp.IsDeleted);
+        }
         public async Task<QueryResultModel<List<ProPackage>>> GetAllAsync(
      Expression<Func<ProPackage, bool>>? filter = null, int pageIndex = 1, int pageSize = 10)
         {

@@ -14,5 +14,6 @@ namespace Repositories.Interfaces
         Task<ProPackage?> GetProPackageByIdWithDetailsAsync(Guid id);
         Task<QueryResultModel<List<ProPackage>>> GetAllAsync(
      Expression<Func<ProPackage, bool>>? filter = null, int pageIndex = 1, int pageSize = 10);
+        Task<ProPackage> GetByIdAsync(Guid id);
     }
 }
