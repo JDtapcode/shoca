@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Converters;
 using Repositories.Entities;
 using Repositories.Enums;
+using Repositories.Models.AccountModels;
 using Repositories.Models.CategoryModels;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ namespace Repositories.Models.ArtworkModels
         public decimal Price { get; set; }
         public int? LikeNumber { get; set; }
         public Guid CreatorId { get; set; }
+        public CreatorInfoModel Creator { get; set; }
         public List<string> Categories { get; set; } = new List<string>();
         //public List<CategoryModel> Categories { get; set; } = new();
         public List<string> Images { get; set; } = new List<string>();

@@ -79,8 +79,15 @@ namespace Services.Common
             //    ? src.ArtworkCategories.Select(ac => ac.Category != null ? ac.Category.Name : "Unknown").ToList()
             //    : new List<string>()
             //))
+            CreateMap<Account, CreatorInfoModel>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+            .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+            .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.AvatarUrl));
             CreateMap<Artwork, ArtworkModel>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.Creator, opt => opt.MapFrom(src => src.Creator))
             .ForMember(dest => dest.Categories, opt => opt.MapFrom(src =>
                 src.ArtworkCategories != null
                 ? src.ArtworkCategories.Select(ac => ac.CategoryId).ToList()

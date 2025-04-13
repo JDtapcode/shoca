@@ -19,6 +19,7 @@ namespace Repositories.Repositories
         public async Task<Artwork?> GetArtworkByIdWithDetailsAsync(Guid id)
         {
             return await _dbContext.Artworks
+                .Include(a => a.Creator)
                 .Include(a => a.ArtworkCategories)
                     .ThenInclude(ac => ac.Category)  
                 .Include(a => a.Images)              
