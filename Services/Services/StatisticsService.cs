@@ -88,6 +88,38 @@ namespace Services.Services
             var freelancerServiceCount = await _unitOfWork.FreelancerServiceRepository
                 .CountAsync(fs => !fs.IsDeleted);
 
+            // 9. Thống kê số lượng giao dịch và tổng tiền của từng ProPackage
+            var proPackageStats = await _unitOfWork.TransactionRepository
+                .GroupByAsync(
+                    filter: t => !t.IsDeleted && t.PaymentStatus == PaymentStatus.Complete && t.ProPackageId != null,
+                    groupBy: t => t.ProPackageId,
+                    select: g => new
+                    {
+                        ProPackageId = g.Key,
+                        PurchaseCount = g.Count(),
+                        TotalRevenue = g.Sum(t => t.MoneyAmount)
+                    }
+                );
+
+            // Lấy danh sách tất cả ProPackage để ánh xạ tên
+            var proPackages = await _unitOfWork.ProPackageRepository
+                .GetAllAsync(
+                    filter: p => !p.IsDeleted,
+                    pageIndex: 1,
+                    pageSize: int.MaxValue
+                );
+
+            var proPackagePurchaseCount = new Dictionary<string, long>();
+            var proPackageRevenue = new Dictionary<string, decimal>();
+
+            foreach (var stat in proPackageStats)
+            {
+                var package = proPackages.Data.FirstOrDefault(p => p.Id == stat.ProPackageId);
+                var packageKey = package != null ? package.Name ?? stat.ProPackageId.ToString() : stat.ProPackageId.ToString();
+                proPackagePurchaseCount[packageKey] = stat.PurchaseCount;
+                proPackageRevenue[packageKey] = stat.TotalRevenue;
+            }
+
             _logger.LogInformation("Lấy thống kê thành công.");
 
             return new StatisticsModel
@@ -99,7 +131,9 @@ namespace Services.Services
                 TransactionCount = transactionCount,
                 JobCount = jobCount,
                 PortfolioCount = portfolioCount,
-                FreelancerServiceCount = freelancerServiceCount
+                FreelancerServiceCount = freelancerServiceCount,
+                ProPackagePurchaseCount = proPackagePurchaseCount,
+                ProPackageRevenue = proPackageRevenue
             };
         }
     }

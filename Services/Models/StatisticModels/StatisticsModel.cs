@@ -16,5 +16,7 @@ namespace Services.Models.StatisticModels
         public long JobCount { get; set; }
         public long PortfolioCount { get; set; }
         public long FreelancerServiceCount { get; set; }
+        public Dictionary<string, long> ProPackagePurchaseCount { get; set; } // Số lượng giao dịch mỗi gói
+        public Dictionary<string, decimal> ProPackageRevenue { get; set; }
     }
 }
