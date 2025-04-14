@@ -123,5 +123,98 @@ namespace Services.Services
 
             return new ResponseModel { Status = true, Message = "Rating and related comments deleted successfully." };
         }
+
+        public async Task<ResponseModel> DeleteCommentAsync(Guid commentId)
+        {
+            // Lấy comment theo ID, bao gồm các comment con
+            var comment = await _unitOfWork.CommentRepository.GetAsync(
+                commentId,
+                include: q => q.Include(c => c.ChildComments)
+            );
+
+            if (comment == null)
+            {
+                return new ResponseModel { Status = false, Message = "Comment not found." };
+            }
+
+            // Xóa đệ quy các comment con
+            await HardDeleteChildCommentsAsync(comment.ChildComments);
+
+            // Xóa comment chính
+            _unitOfWork.CommentRepository.HardDelete(comment);
+
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseModel { Status = true, Message = "Comment and its child comments deleted successfully." };
+        }
+
+        private async Task HardDeleteChildCommentsAsync(ICollection<RatingComment> childComments)
+        {
+            if (childComments == null || !childComments.Any())
+                return;
+
+            foreach (var childComment in childComments)
+            {
+                // Xóa đệ quy các comment con của comment hiện tại
+                await HardDeleteChildCommentsAsync(childComment.ChildComments);
+                _unitOfWork.CommentRepository.HardDelete(childComment);
+            }
+        }
+        public async Task<ResponseModel> DeleteAsync(Guid id)
+        {
+            // Kiểm tra xem id có phải là Rating không
+            var rating = await _unitOfWork.RatingRepository.GetAsync(
+                id,
+                include: q => q.Include(r => r.CommentsList)
+            );
+
+            if (rating != null)
+            {
+                // Xóa rating và các comment liên quan
+                var commentIds = rating.CommentsList?.Select(c => c.Id).ToList() ?? new List<Guid>();
+                if (commentIds.Any())
+                {
+                    await _unitOfWork.CommentRepository.HardDeleteByIdsAsync(commentIds);
+                }
+
+                _unitOfWork.RatingRepository.HardDelete(rating);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseModel { Status = true, Message = "Rating and related comments deleted successfully." };
+            }
+
+            // Nếu không phải Rating, kiểm tra xem có phải Comment không
+            var comment = await _unitOfWork.CommentRepository.GetAsync(
+                id,
+                include: q => q.Include(c => c.ChildComments)
+            );
+
+            if (comment != null)
+            {
+                // Xóa comment và các comment con
+                var commentIds = new List<Guid> { comment.Id };
+                CollectChildCommentIds(comment.ChildComments, commentIds);
+
+                await _unitOfWork.CommentRepository.HardDeleteByIdsAsync(commentIds);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseModel { Status = true, Message = "Comment and its child comments deleted successfully." };
+            }
+
+            // Nếu không tìm thấy cả Rating lẫn Comment
+            return new ResponseModel { Status = false, Message = "No rating or comment found with the provided ID." };
+        }
+
+        private void CollectChildCommentIds(ICollection<RatingComment> childComments, List<Guid> commentIds)
+        {
+            if (childComments == null || !childComments.Any())
+                return;
+
+            foreach (var childComment in childComments)
+            {
+                commentIds.Add(childComment.Id);
+                CollectChildCommentIds(childComment.ChildComments, commentIds);
+            }
+        }
     }
 }

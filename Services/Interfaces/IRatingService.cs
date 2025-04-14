@@ -18,5 +18,7 @@ namespace Services.Interfaces
         Task<Pagination<RatingModel>> GetRatingsByArtworkAsync(RatingFilterModel model);
         Task<ResponseDataModel<RatingModel>> GetRatingById(Guid ratingId);
         Task<ResponseModel> HardDeleteRatingAsync(Guid ratingId);
+        Task<ResponseModel> DeleteCommentAsync(Guid commentId);
+        Task<ResponseModel> DeleteAsync(Guid id);
     }
 }

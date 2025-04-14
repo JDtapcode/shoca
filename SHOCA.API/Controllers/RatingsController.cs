@@ -61,16 +61,36 @@ namespace SHOCA.API.Controllers
             }
             return BadRequest(result);
         }
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> HardDeleteRating(Guid id)
+        //{
+        //    var result = await _ratingService.HardDeleteRatingAsync(id);
+        //    if (!result.Status)
+        //    {
+        //        return NotFound(result.Message);
+        //    }
+        //    return Ok(result.Message);
+        //}
+        //[HttpDelete("childcomment/{id}")]
+        //public async Task<IActionResult> DeleteComment(Guid id)
+        //{
+        //    var result = await _ratingService.DeleteCommentAsync(id);
+        //    if (!result.Status)
+        //    {
+        //        return NotFound(result.Message);
+        //    }
+        //    return Ok(result.Message);
+        //}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> HardDeleteRating(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            var result = await _ratingService.HardDeleteRatingAsync(id);
+            var result = await _ratingService.DeleteAsync(id);
             if (!result.Status)
             {
                 return NotFound(result.Message);
             }
             return Ok(result.Message);
         }
-        
+
     }
 }

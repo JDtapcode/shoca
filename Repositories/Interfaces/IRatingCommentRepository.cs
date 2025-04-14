@@ -9,5 +9,8 @@ namespace Repositories.Interfaces
 {
     public interface IRatingCommentRepository : IGenericRepository<RatingComment>
     {
+        Task<RatingComment> GetAsync(Guid id, Func<IQueryable<RatingComment>, IQueryable<RatingComment>> include = null);
+        void HardDelete(RatingComment entity);
+        Task HardDeleteByIdsAsync(IEnumerable<Guid> commentIds);
     }
 }
