@@ -787,6 +787,7 @@ namespace Services.Services
                 };
             }
 
+            // Cập nhật các thuộc tính khác
             user.FirstName = accountUpdateModel.FirstName;
             user.LastName = accountUpdateModel.LastName;
             user.Gender = accountUpdateModel.Gender;
@@ -811,28 +812,94 @@ namespace Services.Services
                 };
             }
 
-            // Quản lý vai trò người dùng
+            // Quản lý vai trò người dùng - Chỉ cập nhật nếu role thay đổi
             var currentRoles = await _userManager.GetRolesAsync(user);
-            await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            var addRoleResult = await _userManager.AddToRoleAsync(user, accountUpdateModel.Role.ToString());
+            var currentRole = currentRoles.FirstOrDefault();
+            var newRole = accountUpdateModel.Role.ToString();
 
-            if (!addRoleResult.Succeeded)
+            if (!string.IsNullOrEmpty(newRole) && currentRole != newRole)
             {
-                return new ResponseDataModel<AccountUpdateModel>
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                var addRoleResult = await _userManager.AddToRoleAsync(user, newRole);
+
+                if (!addRoleResult.Succeeded)
                 {
-                    Status = false,
-                    Message = "Cannot update account role",
-                    Data = accountUpdateModel
-                };
+                    return new ResponseDataModel<AccountUpdateModel>
+                    {
+                        Status = false,
+                        Message = "Cannot update account role",
+                        Data = accountUpdateModel
+                    };
+                }
             }
 
             return new ResponseDataModel<AccountUpdateModel>
             {
                 Status = true,
-                Message = "Update account and role successfully",
+                Message = "Update account successfully",
                 Data = accountUpdateModel
             };
         }
+        //public async Task<ResponseDataModel<AccountUpdateModel>> UpdateAccount(Guid id, AccountUpdateModel accountUpdateModel)
+        //{
+        //    var user = await _userManager.FindByIdAsync(id.ToString());
+
+        //    if (user == null)
+        //    {
+        //        return new ResponseDataModel<AccountUpdateModel>
+        //        {
+        //            Status = false,
+        //            Message = "User not found",
+        //            Data = null
+        //        };
+        //    }
+
+        //    user.FirstName = accountUpdateModel.FirstName;
+        //    user.LastName = accountUpdateModel.LastName;
+        //    user.Gender = accountUpdateModel.Gender;
+        //    user.DateOfBirth = accountUpdateModel.DateOfBirth;
+        //    user.Address = accountUpdateModel.Address;
+        //    user.AvatarUrl = accountUpdateModel.AvatarUrl;
+        //    user.PersonalWebsiteUrl = accountUpdateModel.PersonalWebsiteUrl;
+        //    user.PortfolioUrl = accountUpdateModel.PortfolioUrl;
+        //    user.PhoneNumber = accountUpdateModel.PhoneNumber;
+        //    user.ModificationDate = DateTime.Now;
+        //    user.ModifiedBy = _claimsService.GetCurrentUserId;
+
+        //    var updateResult = await _userManager.UpdateAsync(user);
+
+        //    if (!updateResult.Succeeded)
+        //    {
+        //        return new ResponseDataModel<AccountUpdateModel>
+        //        {
+        //            Status = false,
+        //            Message = "Cannot update account",
+        //            Data = accountUpdateModel
+        //        };
+        //    }
+
+        //    // Quản lý vai trò người dùng
+        //    var currentRoles = await _userManager.GetRolesAsync(user);
+        //    await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        //    var addRoleResult = await _userManager.AddToRoleAsync(user, accountUpdateModel.Role.ToString());
+
+        //    if (!addRoleResult.Succeeded)
+        //    {
+        //        return new ResponseDataModel<AccountUpdateModel>
+        //        {
+        //            Status = false,
+        //            Message = "Cannot update account role",
+        //            Data = accountUpdateModel
+        //        };
+        //    }
+
+        //    return new ResponseDataModel<AccountUpdateModel>
+        //    {
+        //        Status = true,
+        //        Message = "Update account and role successfully",
+        //        Data = accountUpdateModel
+        //    };
+        //}
 
 
 

@@ -1,4 +1,5 @@
-﻿using Repositories.Models.RatingModels;
+﻿using Repositories.Entities;
+using Repositories.Models.RatingModels;
 using Services.Common;
 using Services.Models.RatingModels;
 using Services.Models.ResponseModels;

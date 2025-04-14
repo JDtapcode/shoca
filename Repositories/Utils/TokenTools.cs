@@ -28,8 +28,41 @@ namespace Repositories.Utils
 
         //    return token;
         //}
+        //public static JwtSecurityToken CreateJWTToken(List<Claim> authClaims, IConfiguration configuration)
+        //{
+        //    var roleClaim = authClaims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+        //    if (roleClaim == null)
+        //    {
+        //        throw new ArgumentException("Missing role claim in authClaims");
+        //    }
+
+        //    var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!));
+        //    _ = int.TryParse(configuration["JWT:TokenValidityInMinutes"], out int tokenValidityInMinutes);
+
+        //    // Tạo token
+        //    var token = new JwtSecurityToken(
+        //        issuer: configuration["JWT:ValidIssuer"],
+        //        audience: configuration["JWT:ValidAudience"],
+        //        expires: DateTime.Now.AddMinutes(tokenValidityInMinutes),
+        //        claims: authClaims,
+        //        signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+        //    );
+
+        //    // Bổ sung thêm trường `role` vào payload
+        //    token.Payload["role"] = roleClaim.Value;
+
+        //    return token;
+        //}
         public static JwtSecurityToken CreateJWTToken(List<Claim> authClaims, IConfiguration configuration)
         {
+            // Lọc để chỉ giữ lại một claim role duy nhất
+            var roleClaims = authClaims.Where(c => c.Type == ClaimTypes.Role).ToList();
+            if (roleClaims.Count > 1)
+            {
+                authClaims.RemoveAll(c => c.Type == ClaimTypes.Role);
+                authClaims.Add(roleClaims.First());
+            }
+
             var roleClaim = authClaims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
             if (roleClaim == null)
             {
@@ -39,7 +72,6 @@ namespace Repositories.Utils
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]!));
             _ = int.TryParse(configuration["JWT:TokenValidityInMinutes"], out int tokenValidityInMinutes);
 
-            // Tạo token
             var token = new JwtSecurityToken(
                 issuer: configuration["JWT:ValidIssuer"],
                 audience: configuration["JWT:ValidAudience"],
@@ -48,7 +80,6 @@ namespace Repositories.Utils
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
             );
 
-            // Bổ sung thêm trường `role` vào payload
             token.Payload["role"] = roleClaim.Value;
 
             return token;
