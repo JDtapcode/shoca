@@ -75,6 +75,8 @@ namespace Services.Services
             // 5. Đếm số lượng giao dịch
             var transactionCount = await _unitOfWork.TransactionRepository
                 .CountAsync(t => !t.IsDeleted);
+            var successTransactionCount = await _unitOfWork.TransactionRepository
+    .CountAsync(t => !t.IsDeleted && t.PaymentStatus == PaymentStatus.Complete);
 
             // 6. Đếm số lượng công việc (jobs)
             var jobCount = await _unitOfWork.JobRepository
@@ -129,6 +131,7 @@ namespace Services.Services
                 TotalArtworkCount = totalArtworkCount,
                 ArtworkCountByStatus = artworkCountByStatus,
                 TransactionCount = transactionCount,
+                SuccessTransactionCount = successTransactionCount,
                 JobCount = jobCount,
                 PortfolioCount = portfolioCount,
                 FreelancerServiceCount = freelancerServiceCount,

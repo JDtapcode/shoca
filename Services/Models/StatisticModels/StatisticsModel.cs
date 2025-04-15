@@ -13,6 +13,7 @@ namespace Services.Models.StatisticModels
         public long TotalArtworkCount { get; set; }
         public Dictionary<string, long> ArtworkCountByStatus { get; set; }
         public long TransactionCount { get; set; }
+        public long SuccessTransactionCount { get; set; }
         public long JobCount { get; set; }
         public long PortfolioCount { get; set; }
         public long FreelancerServiceCount { get; set; }
